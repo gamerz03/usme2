@@ -5,100 +5,219 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>:USME</title>
+    <title>Music Player</title>
     <style>
-        @property --rotate {
-            syntax: "<angle>";
-            initial-value: 132deg;
-            inherits: false;
-        }
-
-        :root{
+        /* Global Styles */
+        :root {
+            --rotate: 132deg;
             --card-height: 65vh;
             --card-width: calc(var(--card-height) / 1.5);
         }
-        body{
+
+        body {
             min-height: 100vh;
             background: #212534;
+            color: #fff;
             display: flex;
-            align-items: center;
             flex-direction: column;
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-            box-sizing: border-box;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
         }
-        .card{
+
+        /* Interactive Card */
+        .card {
             background: #191c29;
             width: var(--card-width);
             height: var(--card-height);
-            padding: 3px;
-            position: relative;
-            border-radius: 6px;
-            justify-content: center;
-            align-items: center;
             display: flex;
-            font-size: 1.5em;
-            color: rgb(88 199 250 / 0%);
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: rgba(88, 199, 250, 0%);
+            border-radius: 8px;
             cursor: pointer;
-            font-family: cursive;
-        }
-        .card:hover{
-            color: rgb(88 199 250 / 100%);
             transition: color 1s;
+            position: relative;
+            overflow: hidden;
         }
-        .card:hover::before,
-        .card:hover::after{
-            animation: none;
-            opacity: 0;
+
+        .card:hover {
+            color: rgba(88, 199, 250, 100%);
         }
-        .card::before{
-            content: " ";
+
+        .card::before {
+            content: '';
             width: 104%;
             height: 102%;
             border-radius: 8px;
-            background-image: linear-gradient(var(--rotate), #5ddcff, #3c67e3 43%, #4e00c2);
+            background: linear-gradient(var(--rotate), #5ddcff, #3c67e3 43%, #4e00c2);
             position: absolute;
             z-index: -1;
             top: -1%;
             left: -2%;
             animation: spin 2.5s linear infinite;
         }
-        .card::after{
-            position: absolute;
-            content: " ";
-            top: calc(var(--card-height) / 6);
-            left: 0;
-            right: 0;
-            z-index: -1;
-            height: 100%;
+
+        .card::after {
+            content: '';
             width: 100%;
-            margin: 0 auto;
-            transform: scale(0.8);
-            filter: blur(calc(var(--card-height) / 6));
-            background-image: linear-gradient(var(--rotate), #5ddcff, #3c67e3 43%, #4e00c2);
-            opacity: 1;
-            transition: opacity .5s;
-            animation: spin 2.55 linera infinite;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(var(--rotate), #5ddcff, #3c67e3 43%, #4e00c2);
+            filter: blur(20px);
+            position: absolute;
+            z-index: -2;
+            top: 0;
+            left: 0;
         }
-        @keyframes spin{
-            0%{
+
+        @keyframes spin {
+            0% {
                 --rotate: 0deg;
             }
-            100%{
+            100% {
                 --rotate: 360deg;
             }
+        }
+
+        /* Controls & Playlist */
+        .controls, .playlist {
+            margin-top: 20px;
+            text-align: center;
+            width: 80%;
+        }
+
+        .controls button {
+            background: #1db954;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover {
+            background: #1ed760;
+        }
+
+        .playlist-item {
+            background: #333;
+            color: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .playlist-item:hover, .playlist-item.active {
+            background: #1db954;
         }
     </style>
 </head>
 
 <body>
-    <div class="card">
-        cheerup ＼＼\(۶•̀ᴗ•́)۶//／
 
-        
+    <div class="card" id="interactive-card">Click to Play Music</div>
 
+    <div class="controls">
+        <button id="prevBtn">Previous</button>
+        <button id="playPauseBtn">Play</button>
+        <button id="nextBtn">Next</button>
+        <button id="shuffleBtn">Shuffle</button>
     </div>
-  <strong style="color:red;"> :USME </strong>
+
+    <div class="playlist" id="playlist">
+        <!-- Playlist will be dynamically rendered here -->
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        const playlist = [
+            { title: 'Binhi - Arthur Nery', file: 'Binhi-Arthur Nery.mp3' },
+            { title: 'Count on Me - Bruno Mars', file: 'count on me.mp3' }
+        ];
+
+        let audioPlayer = document.getElementById('audioPlayer');
+        let playPauseBtn = document.getElementById('playPauseBtn');
+        let prevBtn = document.getElementById('prevBtn');
+        let nextBtn = document.getElementById('nextBtn');
+        let shuffleBtn = document.getElementById('shuffleBtn');
+        let playlistContainer = document.getElementById('playlist');
+        let card = document.getElementById('interactive-card');
+
+        let currentTrack = 0;
+        let isPlaying = false;
+
+        // Load the playlist into the UI
+        function loadPlaylist() {
+            playlistContainer.innerHTML = '';
+            playlist.forEach((song, index) => {
+                const item = document.createElement('div');
+                item.classList.add('playlist-item');
+                item.textContent = song.title;
+                item.addEventListener('click', () => playSong(index));
+                playlistContainer.appendChild(item);
+            });
+        }
+
+        // Play selected song
+        function playSong(index) {
+            if (index < 0) index = playlist.length - 1;
+            if (index >= playlist.length) index = 0;
+            currentTrack = index;
+
+            audioPlayer.src = playlist[currentTrack].file;
+            audioPlayer.play();
+            isPlaying = true;
+
+            updateActiveTrack();
+            playPauseBtn.textContent = 'Pause';
+        }
+
+        // Update active playlist item
+        function updateActiveTrack() {
+            const items = document.querySelectorAll('.playlist-item');
+            items.forEach((item, index) => {
+                item.classList.toggle('active', index === currentTrack);
+            });
+        }
+
+        // Play/Pause toggle
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                audioPlayer.pause();
+                isPlaying = false;
+                playPauseBtn.textContent = 'Play';
+            } else {
+                audioPlayer.play();
+                isPlaying = true;
+                playPauseBtn.textContent = 'Pause';
+            }
+        });
+
+        // Next/Previous/Shuffle
+        nextBtn.addEventListener('click', () => playSong(currentTrack + 1));
+        prevBtn.addEventListener('click', () => playSong(currentTrack - 1));
+        shuffleBtn.addEventListener('click', () => playSong(Math.floor(Math.random() * playlist.length)));
+
+        // Interactive card click to start playlist
+        card.addEventListener('click', () => playSong(currentTrack));
+
+        // Automatically play next track on end
+        audioPlayer.addEventListener('ended', () => playSong(currentTrack + 1));
+
+        // Initialize
+        loadPlaylist();
+        playSong(currentTrack);
+    </script>
+
 </body>
 
 </html>
